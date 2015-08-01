@@ -1,0 +1,8 @@
+# This is an example way to start the browser.
+tptp:
+  # build: .
+  image: seanmcl/tptp-browser
+  volumes:
+    - ./tptp:/opt/tptp
+  ports:
+    - "8081:8080"

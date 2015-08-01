@@ -1,0 +1,7 @@
+/tptp/
+/tptp-browser/node_modules/
+/tptp-browser/build/
+/.idea/
+
+*.iml
+.tern-port

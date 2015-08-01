@@ -1,0 +1,58 @@
+[
+  {
+    "name": "TPTP",
+    "dir": "TPTP-v6.1.0",
+    "hasStats": true,
+    "axioms": [
+      { "file": "AGT001+0.ax",
+        "size": 100},
+      { "file": "AGT002+0.ax",
+        "size": 55 }
+    ],
+    "problems": [
+      { "file": "AGT/AGT001+1.p",
+        "size": 10,
+        "stats": ["E", "THM", 0.12, 556, 0 , 524, 0, 0, 0, 656, 2, 0, 8, 1, 17, 0, "1-4", 143, 0, 70, 0, 0, 70, 0, 0, 5, 1, 290, 286, "0-2", 0] },
+      { "file": "AGT/AGT001+2.p",
+        "size": 10
+      }
+    ]
+  },
+
+  {
+    "name": "ILTP-propositional",
+    "dir": "ILTP-v1.1.2-propositional",
+    "hasStats": false,
+    "axioms": [
+      {"file": "AGT001+1.p",
+        "size": 10},
+      {"file": "AGT001+2.p",
+        "size": 10},
+
+    ],
+    "problems": [
+      {"file": "LCL/LCL181+1.p",
+        "size": 10},
+      {"file": "LCL/LCL182+1.p",
+        "size": 10}
+    ]
+  },
+
+  {
+    "name": "ILTP-firstorder",
+    "dir": "ILTP-v1.1.2-firstorder",
+    "hasStats": false,
+    "axioms": [
+      {"file": "LCL/LCL181+1.p",
+        "size": 10},
+      {"file": "LCL/LCL182+1.p",
+        "size": 10}
+    ],
+    "problems": [
+      {"file": "LCL/LCL181+1.p",
+        "size": 10},
+      {"file": "LCL/LCL182+1.p",
+        "size": 10}
+    ]
+  }
+]

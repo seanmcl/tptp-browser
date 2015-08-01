@@ -1,0 +1,59 @@
+# This is an example Ansible playbook that will download
+# the relevant problem files and put them in a spot where
+# the browser can find them.
+---
+- hosts: server
+  sudo: true
+  tasks:
+    - name: yum
+      yum:
+        name: docker
+        state: latest
+
+    - name: docker service
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: dirs
+      file:
+        path: /opt/tptp
+        state: directory
+        mode: 0755
+
+    - name: get tptp
+      get_url:
+        url: http://www.cs.miami.edu/~tptp/TPTP/Distribution/TPTP-v6.1.0.tgz
+        dest: /opt/tptp/TPTP-v6.1.0.tgz
+
+    - name: unpack tptp
+      unarchive:
+        src: /opt/tptp/TPTP-v6.1.0.tgz
+        dest: /opt/tptp
+        creates: /opt/tptp/TPTP-v6.1.0
+        copy: false
+
+    - name: get iltp firstorder
+      get_url:
+        url: http://www.cs.uni-potsdam.de/ti/iltp/download/ILTP-v1.1.2-firstorder.tar.gz
+        dest: /opt/tptp/ILTP-v1.1.2-firstorder.tar.gz
+
+    - name: unpack iltp firstorder
+      unarchive:
+        src: /opt/tptp/ILTP-v1.1.2-firstorder.tar.gz
+        dest: /opt/tptp
+        creates: /opt/tptp/ILTP-1.1.2-firstorder
+        copy: false
+
+    - name: get iltp propositional
+      get_url:
+        url: http://www.cs.uni-potsdam.de/ti/iltp/download/ILTP-v1.1.2-propositional.tar.gz
+        dest: /opt/tptp/ILTP-v1.1.2-propositional.tar.gz
+
+    - name: unpack iltp propositional
+      unarchive:
+        src: /opt/tptp/ILTP-v1.1.2-propositional.tar.gz
+        dest: /opt/tptp
+        creates: /opt/tptp/ILTP-1.1.2-propositional
+        copy: false
