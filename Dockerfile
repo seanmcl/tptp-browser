@@ -11,6 +11,7 @@ RUN mkdir -p /opt/tptp-browser/public \
 ADD tptp-browser/package.json /opt/tptp-browser/package.json
 WORKDIR /opt/tptp-browser
 RUN npm install
+EXPOSE 8080
 # Now add all the files.
 ADD tptp-browser /opt/tptp-browser
 RUN npm run compile
