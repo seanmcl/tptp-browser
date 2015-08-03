@@ -21,7 +21,6 @@ const routes =
   <Route>
     <Route handler={App}>
       <Route path='browser' handler={ProblemBrowser}/>
-      <Route path='stats' handler={ProblemStats}/>
       <Route path='browser/:problemSet' handler={ProblemBrowser}/>
       <Route path='browser/:problemSet/:type' handler={ProblemBrowser}/>
       <Route path='browser/:problemSet/:type/:name' handler={ProblemBrowser}/>

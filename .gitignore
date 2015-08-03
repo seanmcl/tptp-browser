@@ -5,3 +5,6 @@
 
 *.iml
 .tern-port
+/tptp-browser/public/problems
+/npm-debug.log
+/node_modules/

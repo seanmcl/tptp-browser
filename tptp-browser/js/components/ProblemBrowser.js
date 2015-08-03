@@ -7,10 +7,11 @@ import R from 'ramda';
 import React from 'react';
 import Store from '../stores/ProblemBrowserStore';
 import Util from '../Util';
-import { Button, ButtonGroup, ButtonToolbar, Col, DropdownButton, Grid, Input,
-         MenuItem, Nav, NavItem, Panel, Row } from 'react-bootstrap';
+import { Button, ButtonGroup, ButtonToolbar, Col, Collapse, DropdownButton,
+         Grid, Input, ListGroup, ListGroupItem,
+         MenuItem, Nav, NavItem, Panel, PanelGroup, Row } from 'react-bootstrap';
 import { ButtonLink, MenuItemLink, NavItemLink } from 'react-router-bootstrap';
-import { Column, Table} from 'fixed-data-table';
+import { Column, Table } from 'fixed-data-table';
 import { Link } from 'react-router';
 import { makeFileRoute } from '../stores/ProblemBrowserStore';
 import { PROBLEM_MAX_SIZE,
@@ -29,7 +30,6 @@ require('../../css/ProblemBrowser.css');
 const MAX_PROBLEMS = 30;
 const SELECT_DELIMITER = '-';
 const getStateFromStore = () => Store.get();
-const buttonToolbarStyle = {marginRight: 20};
 
 /**
  *
@@ -41,10 +41,6 @@ const Style = (() => {
       marginTop: 20
     },
     sidebarWidth: sidebarWidth,
-    sidebarButton: {
-      float: 'left',
-      marginRight: 20,
-    }
   }
 })();
 
@@ -141,7 +137,7 @@ export default class ProblemBrowserContainer extends React.Component {
     const problemSetNames = index.problemSetNames();
     const defaultProblemSet = () => {
       if (problemSetNames.length > 0) return problemSetNames[0];
-      return null;
+      return 'Loading';
     };
     problemSet = problemSet || defaultProblemSet();
 
@@ -222,7 +218,7 @@ export default class ProblemBrowserContainer extends React.Component {
 }
 
 ProblemBrowserContainer.contextTypes = {
-  router: Types.func.isRequired
+  router: Types.func.isRequired,
 };
 
 
@@ -239,63 +235,53 @@ class ProblemBrowser extends React.Component {
     return (
       <Grid style={Style.grid}>
         <Row>
-          <Col md={12}>
-            <ButtonToolbar>
-              <span style={Style.sidebarButton}>
+          <Col md={2}>
+            <div style={{marginBottom: 20}}>
+              <ButtonGroup justified>
                 <ProblemSetChooser problemSet={problemSet}
                                    problemSetNames={problemSetNames} />
-              </span>
+              </ButtonGroup>
+            </div>
 
-              <span style={R.merge({display: hasAxioms ? null : 'none'}, Style.sidebarButton)}>
-                <TypeChooser type={type}
-                             problemSet={problemSet} />
-              </span>
+            <div style={{display: hasAxioms ? undefined : 'none', marginBottom: 20}}>
+              <TypeChooser type={type}
+                           problemSet={problemSet} />
+            </div>
 
-              <span style={Style.sidebarButton}>
-                <DomainsChooser domains={domains} />
-              </span>
+            <div style={{marginBottom: 20}}>
+              <ProblemFilter />
+            </div>
 
-              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                <FormsChooser />
-              </span>
+            <div>
+              <DomainsChooser domains={domains} />
+            </div>
 
-              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                  <StatusChooser />
-              </span>
+            <div style={{display: isTptp ? undefined : 'none'}}>
+              <StatusChooser />
+            </div>
 
-              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                <DifficultyChooser />
-              </span>
+            <div style={{display: isTptp ? undefined : 'none'}}>
+              <DifficultyChooser />
+            </div>
 
-              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                <EqualityChooser />
-              </span>
+            <div style={{display: isTptp ? undefined : 'none'}}>
+              <EqualityChooser />
+            </div>
 
-              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                <OrderChooser />
-              </span>
-
-              <span id='problem-filter'
-                    className='btn-group'
-                    style={R.merge({width: 100}, Style.sidebarButton)}>
-                <ProblemFilter />
-              </span>
-            </ButtonToolbar>
-          </Col>
-        </Row>
-
-        <Row style={{marginTop: 20}}>
-          <Col md={2}>
-            <div style={Style.sidebarButton}>
-              <ProblemList problems={display}
-                           type={type} />
+            <div style={{display: isTptp ? undefined : 'none'}}>
+              <OrderChooser />
             </div>
           </Col>
 
-          <Col md={10}>
+          <Col md={8}>
             <ProblemDisplay problem={problem}
                             problemSet={problemSet}
                             body={problemBody} />
+          </Col>
+
+          <Col md={2}>
+            <ProblemList problems={display}
+                         type={type} />
           </Col>
         </Row>
 
@@ -325,12 +311,12 @@ class ProblemSetChooser extends React.Component {
   render() {
     const { problemSet, problemSetNames } = this.props;
     return (
-        <DropdownButton title={problemSet}>
-          {problemSetNames.map(s =>
-            <MenuItemLink key={s} to={`/browser/${s}`}>
-              {s}
-            </MenuItemLink>)}
-        </DropdownButton>
+      <DropdownButton style={{width: '100%'}} title={problemSet}>
+        {problemSetNames.map(s =>
+          <MenuItemLink key={s} to={`/browser/${s}`}>
+            {s}
+          </MenuItemLink>)}
+      </DropdownButton>
     );
   }
 }
@@ -349,15 +335,15 @@ class TypeChooser extends React.Component {
     const { problemSet, type } = this.props;
     const types = ['problems', 'axioms'];
     return (
-      <DropdownButton title={type.capitalize()}>
+      <ButtonGroup justified>
         {types.map(t =>
-            <MenuItemLink key={t}
-                          active={type === t}
-                          to={`/browser/${problemSet}/${t}`}>
+            <ButtonLink key={t}
+                        active={type === t}
+                        to={`/browser/${problemSet}/${t}`}>
               {t.capitalize()}
-            </MenuItemLink>
+            </ButtonLink>
         )}
-      </DropdownButton>
+      </ButtonGroup>
     );
   }
 }
@@ -382,14 +368,16 @@ class DomainsChooser extends React.Component {
     };
     const options = domains.map(c => ({value: c, label: c}));
     return (
-      <DropdownButton className='dropdown-select' title='Domains'>
-        <Select options={options}
-                placeholder='Any'
-                onChange={onChange}
-                value={selectedDomains}
-                delimiter={SELECT_DELIMITER}
-                multi={true} />
-      </DropdownButton>
+      <div>
+        <Panel collapsible defaultExpanded={false} header='Domains'>
+          <Select options={options}
+                  placeholder='Any'
+                  onChange={onChange}
+                  value={selectedDomains}
+                  delimiter={SELECT_DELIMITER}
+                  multi={true} />
+        </Panel>
+      </div>
     );
   }
 }
@@ -415,13 +403,13 @@ class FormsChooser extends React.Component {
     const onChange = (_, forms) => router.extendAndTransition(QueryKeys.forms,
       forms.map(t => t.value).sort().join(SELECT_DELIMITER));
     return (
-      <DropdownButton className='dropdown-select' title='Forms'>
+      <Panel collapsible defaultExpanded={false} header='Forms'>
         <Select options={options}
                 placeholder='Any'
                 onChange={onChange}
                 value={selectedForms}
                 multi={true} />
-      </DropdownButton>
+      </Panel>
     );
   }
 }
@@ -449,13 +437,13 @@ class StatusChooser extends React.Component {
     const onChange = (_, status) => router.extendAndTransition(QueryKeys.status,
       status.map(s => s.value).sort().join(SELECT_DELIMITER));
     return (
-      <DropdownButton className='dropdown-select' title='Status'>
+      <Panel collapsible defaultExpanded={false} header='Status'>
         <Select options={options}
                 placeholder='Any'
                 onChange={onChange}
                 value={selectedStatus}
                 multi={true} />
-      </DropdownButton>
+      </Panel>
     );
   }
 }
@@ -476,7 +464,7 @@ class DifficultyChooser extends React.Component {
     const onChangeMin = () => router.extendAndTransition(QueryKeys.minDifficulty, this.refs.min.getValue());
     const onChangeMax = () => router.extendAndTransition(QueryKeys.maxDifficulty, this.refs.max.getValue());
     return (
-      <DropdownButton id='difficulty' className='dropdown-select' title='Difficulty'>
+      <Panel collapsible defaultExpanded={false} header='Difficulty'>
         <Input type='text'
                addonBefore='Min'
                value={minDifficulty}
@@ -487,7 +475,7 @@ class DifficultyChooser extends React.Component {
                value={maxDifficulty}
                ref='max'
                onChange={onChangeMax}/>
-      </DropdownButton>
+      </Panel>
     );
   }
 }
@@ -510,13 +498,13 @@ class EqualityChooser extends React.Component {
     ];
     const onChange = s => router.extendAndTransition(QueryKeys.equality, s);
     return (
-      <DropdownButton className='dropdown-select' title='Equality'>
+      <Panel collapsible defaultExpanded={false} header='Equality'>
         <Select options={options}
                 placeholder='Any'
                 onChange={onChange}
                 value={selectedEquality}
                 multi={false} />
-      </DropdownButton>
+      </Panel>
     );
   }
 }
@@ -539,13 +527,13 @@ class OrderChooser extends React.Component {
     ];
     const onChange = s => router.extendAndTransition(QueryKeys.order, s);
     return (
-      <DropdownButton className='dropdown-select' title='Order'>
+      <Panel collapsible defaultExpanded={false} header='Order'>
         <Select options={options}
                 placeholder='Any'
                 onChange={onChange}
                 value={selectedOrder}
                 multi={false} />
-      </DropdownButton>
+      </Panel>
     );
   }
 }
