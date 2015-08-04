@@ -14,10 +14,10 @@ import assign from 'object-assign';
  *     /browser/TPTP/problems/AGT001+1
  */
 const makeFilePath = (problemSetDir, type, problemFile) => {
-  const kind = problemFile.substr(0, 3);
+  const domain = problemFile.substr(0, 3);
   return type === 'axioms' ?
     `/problems/${problemSetDir}/Axioms/${problemFile}` :
-    `/problems/${problemSetDir}/Problems/${kind}/${problemFile}`;
+    `/problems/${problemSetDir}/Problems/${domain}/${problemFile}`;
 };
 
 /**
@@ -37,6 +37,7 @@ const Problem = (problemSetName, problemSetDir) => p => (() => {
   const _problemName = _fileName.replace(/\.[^\.]*$/, '');
   const _route = makeFileRoute(problemSetName, 'problems', _problemName);
   const _file = makeFilePath(problemSetDir, 'problems', _fileName);
+  const domain = () => p.file.substr(0, 3);
   const file = () => _file;
   const name = () => _problemName;
   const size = () => p.size;
@@ -86,10 +87,15 @@ const Problem = (problemSetName, problemSetDir) => p => (() => {
   // 30 is func arity range
   // 31 is num arith syms
   const hasEquality = () => numEqualityAtoms() > 0;
+  const isPropositional = () => numPropSyms() === numPredSyms();
+  const isFirstOrder = () => numPropSyms() !== numPredSyms();
   return {
     difficulty,
+    domain,
     file,
     hasEquality,
+    isPropositional,
+    isFirstOrder,
     matches,
     name,
     numEqualityAtoms,

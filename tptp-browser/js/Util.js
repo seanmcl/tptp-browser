@@ -8,6 +8,10 @@ const logError = e => console.log(e);
 export const CHANGE_EVENT = 'change';
 export const PROBLEM_MAX_SIZE = '100000';
 
+/**
+ * This doesn't work as a fat arrow because 'this' is bound at the
+ * wrong time.
+ */
 String.prototype.capitalize = function() {
   return this.charAt(0).toUpperCase() + this.slice(1);
 };
@@ -16,7 +20,6 @@ String.prototype.capitalize = function() {
  *
  */
 export const dirname = s => s.replace(/\/[^\/]*\/?$/, '');
-
 
 /**
  *

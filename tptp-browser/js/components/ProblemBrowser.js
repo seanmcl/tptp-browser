@@ -20,6 +20,8 @@ import { PROBLEM_MAX_SIZE,
 import { PropTypes as Types } from 'react';
 import Select from 'react-select';
 import keymirror from 'keymirror';
+import { BarChart, PieChart, Treemap } from 'react-d3';
+import Numeral from 'numeral';
 
 require('../../node_modules/highlight.js/styles/idea.css');
 require('../../node_modules/fixed-data-table/dist/fixed-data-table.css');
@@ -41,6 +43,16 @@ const Style = (() => {
       marginTop: 20
     },
     sidebarWidth: sidebarWidth,
+    pieChart: {
+      width: 350,
+      height: 350,
+      radius: 100,
+      innerRadius: 20,
+    },
+    barChart: {
+      width: 350,
+      height: 350,
+    }
   }
 })();
 
@@ -55,34 +67,29 @@ const QueryKeys = keymirror({
   status: null,
 });
 
+
 /**
- *
+ * Add some utility functions to the router
  */
-const Router = router => (() => {
-  const _route = router.getCurrentPathname();
-  const _params = router.getCurrentParams();
-  const _query = router.getCurrentQuery();
-  const extendAndTransition = (key, value) => {
-    const v = value.length > 0 ? value : undefined;
-    const newQuery = R.merge(_query, {[key]: v});
-    router.transitionTo(_route, _params, newQuery);
+const Router = router => {
+  const cleanQuery = q => R.fromPairs(R.toPairs(q).filter(x => x[1]));
+  router.extendQuery = (keyOrObj, val) => {
+    const cur = router.getCurrentQuery();
+    const obj = (typeof(keyOrObj) === 'string') ? {[keyOrObj]: val} : keyOrObj;
+    const query = cleanQuery(R.merge(cur, obj));
+    router.transitionTo(router.getCurrentPathname(), null, query);
   };
-  const hasQueryParam = key => key in _query;
-  const getQueryParam = key => _query[key];
-  const getQueryParamList = key => {
-    const v = getQueryParam(key);
+  router.transitionWithQuery = to => {
+    router.transitionTo(to, null, cleanQuery(router.getCurrentQuery()));
+  };
+  router.hasQueryParam = key => key in router.getCurrentQuery();
+  router.getQueryParam = key => router.getCurrentQuery()[key];
+  router.getQueryParamList = key => {
+    const v = router.getCurrentQuery()[key];
     return v ? v.split(SELECT_DELIMITER) : [];
   };
-  const queryObject = () => _query;
-  return {
-    extendAndTransition,
-    getQueryParam,
-    getQueryParamList,
-    queryObject,
-    hasQueryParam
-  };
-})();
-
+  return router;
+};
 
 /**
  *
@@ -132,16 +139,18 @@ export default class ProblemBrowserContainer extends React.Component {
 
   render() {
     let { problemSet, type, name } = this.props.params;
-    const { index, files } = this.state;
-
-    const problemSetNames = index.problemSetNames();
-    const defaultProblemSet = () => {
-      if (problemSetNames.length > 0) return problemSetNames[0];
-      return 'Loading';
-    };
-    problemSet = problemSet || defaultProblemSet();
-
+    let routeChanged = false;
+    if (!problemSet) {
+      problemSet = 'TPTP';
+      routeChanged = true;
+    }
+    if (!type) {
+      type = type || 'problems';
+      routeChanged = true;
+    }
     const router = Router(this.context.router);
+    const { index, files } = this.state;
+    const problemSetNames = index.problemSetNames();
     const selectedDomains = router.getQueryParamList(QueryKeys.domains);
     const selectedStatus = router.getQueryParamList(QueryKeys.status);
     const selectedForms = router.getQueryParamList(QueryKeys.forms);
@@ -183,25 +192,36 @@ export default class ProblemBrowserContainer extends React.Component {
       && (!order
           || !p.numPropSyms
           || !p.numPredSyms
-          || (order === 'Propositional' && p.numPropSyms() === p.numPredSyms())
-          || (order === 'FirstOrder' && p.numPropSyms() !== p.numPredSyms()));
+          || (order === 'Propositional' && p.isPropositional())
+          || (order === 'FirstOrder' && p.isFirstOrder()));
 
     const pset = index.getProblemSet(problemSet);
     const domains = pset ? pset.domains() : [];
     const problems = pset ? pset.problems().filter(problemFilter) : [];
     const axioms = pset ? pset.axioms().filter(problemFilter) : [];
 
-    type = type || 'problems';
-
-    const defaultName = () => {
+    // Ensure the name is in the route for non-charts.
+    const defaultName = (() => {
       if (problems && type === 'problems' && problems.length > 0) return problems[0].name();
       if (axioms && type === 'axioms' && axioms.length > 0) return axioms[0].name();
       return null;
-    };
+    })();
 
-    name = name || defaultName();
-    this._loadFile(problemSet, type, name);
-    const problem = pset ? pset.problemOrAxiom(type, name) : null;
+    if (defaultName && !name) {
+      name = defaultName;
+      routeChanged = true;
+    }
+
+    if (routeChanged) {
+      if (name) {
+        router.transitionWithQuery(`/browser/${problemSet}/${type}/${name}`);
+      } else {
+        router.transitionWithQuery(`/browser/${problemSet}/${type}`);
+      }
+      return null;
+    }
+
+    const problem = (pset && name) ? pset.problemOrAxiom(type, name) : null;
     const file = problem ? problem.file() : null;
     const body = file ? files[file] : null;
     return (
@@ -231,7 +251,7 @@ class ProblemBrowser extends React.Component {
             problemSetNames, type, domains } = this.props;
     const display = type === 'axioms' ? axioms : problems;
     const isTptp = problemSet == 'TPTP';
-    const hasAxioms = axioms && axioms.length !== 0;
+    const isCharts = type === 'charts';
     return (
       <Grid style={Style.grid}>
         <Row>
@@ -243,9 +263,11 @@ class ProblemBrowser extends React.Component {
               </ButtonGroup>
             </div>
 
-            <div style={{display: hasAxioms ? undefined : 'none', marginBottom: 20}}>
-              <TypeChooser type={type}
-                           problemSet={problemSet} />
+            <div style={{display: axioms ? undefined : 'none', marginBottom: 20}}>
+              <ButtonGroup justified>
+                <TypeChooser type={type}
+                             problemSet={problemSet} />
+              </ButtonGroup>
             </div>
 
             <div style={{marginBottom: 20}}>
@@ -274,9 +296,17 @@ class ProblemBrowser extends React.Component {
           </Col>
 
           <Col md={8}>
-            <ProblemDisplay problem={problem}
-                            problemSet={problemSet}
-                            body={problemBody} />
+            {isCharts ?
+              <div style={{display: isTptp ? undefined : 'none'}}>
+                <ChartsDisplay problems={problems} />
+              </div>
+
+              :
+
+              <ProblemDisplay problem={problem}
+                              problemSet={problemSet}
+                              body={problemBody} />
+            }
           </Col>
 
           <Col md={2}>
@@ -303,6 +333,175 @@ ProblemBrowser.propTypes = {
   type: Types.string,
 };
 
+/**
+ *
+ */
+class ChartsDisplay extends React.Component {
+  render() {
+    const { problems } = this.props;
+    const count = problems.length;
+    if (count === 0) return <h1>No problems match</h1>;
+
+    return (
+      <Grid fluid>
+        <Row>
+          <Col md={6}>
+            <EqualityChart problems={problems} />
+          </Col>
+          <Col md={6}>
+            <StatusChart problems={problems} />
+          </Col>
+        </Row>
+
+        <Row>
+          <Col md={6}>
+            <OrderChart problems={problems} />
+          </Col>
+          <Col md={6}>
+            <DifficultyChart problems={problems} />
+          </Col>
+        </Row>
+
+        <Row>
+          <Col md={6}>
+            <DomainChart problems={problems} />
+          </Col>
+        </Row>
+      </Grid>
+    )
+  }
+}
+
+ChartsDisplay.propTypes = {
+  problems: Types.arrayOf(Types.object).isRequired,
+};
+
+
+/**
+ *
+ */
+class StatusChart extends React.Component {
+  render() {
+    const { problems } = this.props;
+    const count = problems.length;
+    const pcnt = v => {
+      const num = problems.filter(p => p.status() === v).length;
+      return (num > 0) ? Numeral(100 * num / count).format('00.0') : null;
+    };
+    const data = [
+      {value: pcnt('UNS'), label: 'Unsatisfiable'},
+      {value: pcnt('SAT'), label: 'Satisfiable'},
+      {value: pcnt('THM'), label: 'Theorem'},
+      {value: pcnt('UNK'), label: 'Unknown'},
+      {value: pcnt('OPN'), label: 'Open'},
+      {value: pcnt('CSA'), label: 'CounterSatisfiable'},
+    ].filter(o => o.value !== null);
+
+    return (
+      <PieChart data={data} {...Style.pieChart} />
+    )
+  }
+}
+
+StatusChart.propTypes = {
+  problems: Types.arrayOf(Types.object).isRequired,
+};
+
+
+/**
+ *
+ */
+class EqualityChart extends React.Component {
+  render() {
+    const { problems } = this.props;
+    const count = problems.length;
+    const numEquality = problems.filter(p => p.hasEquality()).length;
+    const pcntEquality = Numeral(100 * numEquality / count).format('00.0');
+    const pcntNoEquality = Numeral(100 - pcntEquality).format('00.0');
+    const data = [
+      {label: 'Equality', value: pcntEquality},
+      {label: 'No Equality', value: pcntNoEquality},
+    ];
+
+    return (
+      <PieChart data={data} {...Style.pieChart} />
+    )
+  }
+}
+
+EqualityChart.propTypes = {
+  problems: Types.arrayOf(Types.object).isRequired,
+};
+
+/**
+ *
+ */
+class OrderChart extends React.Component {
+  render() {
+    const { problems } = this.props;
+    const count = problems.length;
+    const numProp = problems.filter(p => p.isPropositional()).length;
+    const pcntProp = Numeral(100 * numProp / count).format('00.0');
+    const pcntFirstOrder = Numeral(100 - pcntProp).format('00.0');
+    const data = [
+      {label: 'Propositional', value: pcntProp},
+      {label: 'First Order', value: pcntFirstOrder},
+    ];
+
+    return (
+      <PieChart data={data} {...Style.pieChart} />
+    )
+  }
+}
+
+OrderChart.propTypes = {
+  problems: Types.arrayOf(Types.object).isRequired,
+};
+
+
+/**
+ *
+ */
+class DifficultyChart extends React.Component {
+  render() {
+    const { problems } = this.props;
+    const step = 0.1;
+    const datum = x =>
+      problems.filter(p => p.difficulty() >= x && p.difficulty() < x + step).length;
+    const data = R.unfold(x => x > 1.0 ? false : [{label: Numeral(x).format('.0'), value: datum(x)}, x + step], 0.0);
+    return (
+      <BarChart data={data} {...Style.barChart} />
+    )
+  }
+}
+
+DifficultyChart.propTypes = {
+  problems: Types.arrayOf(Types.object).isRequired,
+};
+
+
+/**
+ *
+ */
+class DomainChart extends React.Component {
+  render() {
+    const { problems } = this.props;
+    const fn = (obj, p) => {
+      const current = obj[p.domain()];
+      const next = current ? current + 1 : 1;
+      return R.merge(obj, {[p.domain()]: next});
+    };
+    const data = R.toPairs(R.reduce(fn, {}, problems)).map(arr => ({label: arr[0], value: arr[1]}));
+    return (
+      <Treemap data={data} {...Style.barChart} />
+    )
+  }
+}
+
+DomainChart.propTypes = {
+  problems: Types.arrayOf(Types.object).isRequired,
+};
+
 
 /**
  *
@@ -311,7 +510,7 @@ class ProblemSetChooser extends React.Component {
   render() {
     const { problemSet, problemSetNames } = this.props;
     return (
-      <DropdownButton style={{width: '100%'}} title={problemSet}>
+      <DropdownButton title={problemSet}>
         {problemSetNames.map(s =>
           <MenuItemLink key={s} to={`/browser/${s}`}>
             {s}
@@ -333,17 +532,15 @@ ProblemSetChooser.propTypes = {
 class TypeChooser extends React.Component {
   render() {
     const { problemSet, type } = this.props;
-    const types = ['problems', 'axioms'];
+    const types = ['problems', 'axioms', 'charts'];
     return (
-      <ButtonGroup justified>
+      <DropdownButton title={type.capitalize()}>
         {types.map(t =>
-            <ButtonLink key={t}
-                        active={type === t}
-                        to={`/browser/${problemSet}/${t}`}>
+            <MenuItemLink key={t} to={`/browser/${problemSet}/${t}`}>
               {t.capitalize()}
-            </ButtonLink>
+            </MenuItemLink>
         )}
-      </ButtonGroup>
+      </DropdownButton>
     );
   }
 }
@@ -364,7 +561,8 @@ class DomainsChooser extends React.Component {
     const router = Router(this.context.router);
     const selectedDomains = router.getQueryParamList(QueryKeys.domains);
     const onChange = (_, ds) => {
-      router.extendAndTransition(QueryKeys.domains, ds.map(d => d.value).sort().join(SELECT_DELIMITER));
+      const domains = ds.map(d => d.value).sort().join(SELECT_DELIMITER);
+      router.extendQuery(QueryKeys.domains, domains);
     };
     const options = domains.map(c => ({value: c, label: c}));
     return (
@@ -400,8 +598,8 @@ class FormsChooser extends React.Component {
     const selectedForms = router.getQueryParamList(QueryKeys.forms);
     const forms = ['CNF', 'FOF', 'TFA', 'TFF', 'THF'];
     const options = forms.map(t => ({value: t, label: t}));
-    const onChange = (_, forms) => router.extendAndTransition(QueryKeys.forms,
-      forms.map(t => t.value).sort().join(SELECT_DELIMITER));
+    const onChange = (_, forms) =>
+      router.extendQuery(QueryKeys.forms, forms.map(t => t.value).sort().join(SELECT_DELIMITER));
     return (
       <Panel collapsible defaultExpanded={false} header='Forms'>
         <Select options={options}
@@ -434,8 +632,8 @@ class StatusChooser extends React.Component {
       {value: 'OPN', label: 'Open'},
       {value: 'CSA', label: 'CounterSatisfiable'}
     ];
-    const onChange = (_, status) => router.extendAndTransition(QueryKeys.status,
-      status.map(s => s.value).sort().join(SELECT_DELIMITER));
+    const onChange = (_, status) => router.extendQuery(
+      QueryKeys.status, status.map(s => s.value).sort().join(SELECT_DELIMITER));
     return (
       <Panel collapsible defaultExpanded={false} header='Status'>
         <Select options={options}
@@ -461,8 +659,8 @@ class DifficultyChooser extends React.Component {
     const router = Router(this.context.router);
     const minDifficulty = router.getQueryParam(QueryKeys.minDifficulty) || '0.0';
     const maxDifficulty = router.getQueryParam(QueryKeys.maxDifficulty) || '1.0';
-    const onChangeMin = () => router.extendAndTransition(QueryKeys.minDifficulty, this.refs.min.getValue());
-    const onChangeMax = () => router.extendAndTransition(QueryKeys.maxDifficulty, this.refs.max.getValue());
+    const onChangeMin = () => router.extendQuery(QueryKeys.minDifficulty, this.refs.min.getValue());
+    const onChangeMax = () => router.extendQuery(QueryKeys.maxDifficulty, this.refs.max.getValue());
     return (
       <Panel collapsible defaultExpanded={false} header='Difficulty'>
         <Input type='text'
@@ -496,7 +694,7 @@ class EqualityChooser extends React.Component {
       {value: 'Some', label: 'Some'},
       {value: 'None', label: 'None'},
     ];
-    const onChange = s => router.extendAndTransition(QueryKeys.equality, s);
+    const onChange = s => router.extendQuery(QueryKeys.equality, s);
     return (
       <Panel collapsible defaultExpanded={false} header='Equality'>
         <Select options={options}
@@ -525,7 +723,7 @@ class OrderChooser extends React.Component {
       {value: 'Propositional', label: 'Propositional'},
       {value: 'FirstOrder', label: 'First Order'},
     ];
-    const onChange = s => router.extendAndTransition(QueryKeys.order, s);
+    const onChange = s => router.extendQuery(QueryKeys.order, s);
     return (
       <Panel collapsible defaultExpanded={false} header='Order'>
         <Select options={options}
@@ -549,7 +747,7 @@ class ProblemFilter extends React.Component {
   render() {
     const router = Router(this.context.router);
     const contents = router.getQueryParam(QueryKeys.filter) || '';
-    const onChange = () => router.extendAndTransition(QueryKeys.filter, this.refs.input.getValue());
+    const onChange = () => router.extendQuery(QueryKeys.filter, this.refs.input.getValue());
     return (
       <Input type='text'
              value={contents}
@@ -572,7 +770,7 @@ class ProblemList extends React.Component {
   render() {
     const { problems, type } = this.props;
     const router = Router(this.context.router);
-    const query = router.queryObject();
+    const query = router.getCurrentQuery();
     if (!problems) return null;
     const rowGetter = n => [problems[n]];
     const count = problems.length;
@@ -587,7 +785,7 @@ class ProblemList extends React.Component {
              width={Style.sidebarWidth}
              maxHeight={500}
              headerHeight={30}>
-        <Column label={`${type.capitalize()}: ${count}`}
+        <Column label={`Count: ${count}`}
                 cellRenderer={cellRenderer}
                 align='left'
                 width={Style.sidebarWidth}

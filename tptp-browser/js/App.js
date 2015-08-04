@@ -2,9 +2,8 @@
 
 import React from 'react';
 import Router from 'react-router';
-import { Route, RouteHandler, Redirect, HashLocation, HistoryLocation } from 'react-router';
+import { DefaultRoute, HashLocation, HistoryLocation, Redirect, Route, RouteHandler } from 'react-router';
 import ProblemBrowser from './components/ProblemBrowser';
-import ProblemStats from './components/ProblemStats';
 
 require('bootstrap-webpack');
 require('../css/default.css');
@@ -18,7 +17,7 @@ class App extends React.Component {
 }
 
 const routes =
-  <Route>
+  <Route path='/' handler={App}>
     <Route handler={App}>
       <Route path='browser' handler={ProblemBrowser}/>
       <Route path='browser/:problemSet' handler={ProblemBrowser}/>
