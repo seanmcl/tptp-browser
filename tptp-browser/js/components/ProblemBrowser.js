@@ -214,9 +214,9 @@ export default class ProblemBrowserContainer extends React.Component {
 
     if (routeChanged) {
       if (name) {
-        router.transitionWithQuery(`/browser/${problemSet}/${type}/${name}`);
+        router.transitionWithQuery(`/${problemSet}/${type}/${name}`);
       } else {
-        router.transitionWithQuery(`/browser/${problemSet}/${type}`);
+        router.transitionWithQuery(`/${problemSet}/${type}`);
       }
       return null;
     }
@@ -512,7 +512,7 @@ class ProblemSetChooser extends React.Component {
     return (
       <DropdownButton title={problemSet}>
         {problemSetNames.map(s =>
-          <MenuItemLink key={s} to={`/browser/${s}`}>
+          <MenuItemLink key={s} to={`/${s}`}>
             {s}
           </MenuItemLink>)}
       </DropdownButton>
@@ -536,7 +536,7 @@ class TypeChooser extends React.Component {
     return (
       <DropdownButton title={type.capitalize()}>
         {types.map(t =>
-            <MenuItemLink key={t} to={`/browser/${problemSet}/${t}`}>
+            <MenuItemLink key={t} to={`/${problemSet}/${t}`}>
               {t.capitalize()}
             </MenuItemLink>
         )}

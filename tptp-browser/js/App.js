@@ -18,12 +18,10 @@ class App extends React.Component {
 
 const routes =
   <Route path='/' handler={App}>
-    <Route handler={App}>
-      <Route path='browser' handler={ProblemBrowser}/>
-      <Route path='browser/:problemSet' handler={ProblemBrowser}/>
-      <Route path='browser/:problemSet/:type' handler={ProblemBrowser}/>
-      <Route path='browser/:problemSet/:type/:name' handler={ProblemBrowser}/>
-    </Route>
+    <DefaultRoute handler={ProblemBrowser} />
+    <Route path=':problemSet' handler={ProblemBrowser} />
+    <Route path=':problemSet/:type' handler={ProblemBrowser} />
+    <Route path=':problemSet/:type/:name' handler={ProblemBrowser} />
   </Route>;
 
 Router.run(routes, HashLocation, (Handler) => {

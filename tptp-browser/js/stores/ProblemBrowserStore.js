@@ -11,7 +11,7 @@ import assign from 'object-assign';
  * The file
  *     /problems/TPTP-v6.1.0/Problems/AGT/AGT001+1.p'
  * corresponds to route
- *     /browser/TPTP/problems/AGT001+1
+ *     /TPTP/problems/AGT001+1
  */
 const makeFilePath = (problemSetDir, type, problemFile) => {
   const domain = problemFile.substr(0, 3);
@@ -24,7 +24,7 @@ const makeFilePath = (problemSetDir, type, problemFile) => {
  *
  */
 export const makeFileRoute = (problemSetName, type, problemName) => {
-  return `/browser/${problemSetName}/${type}/${problemName}`;
+  return `/${problemSetName}/${type}/${problemName}`;
 };
 
 
