@@ -24,7 +24,7 @@
     "type": "git",
     "url": "git@github.com:seanmcl/tptp-browser.git"
   },
-  "author": "EGLP",
+  "author": "seanmcl",
   "license": "MIT",
   "dependencies": {
     "bootstrap": "^3.3.5",
